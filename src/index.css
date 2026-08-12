@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta "vino tinto" — reemplaza el acento ámbar de gastos-pwa,
+     misma progresión de tonos (50 claro -> 900 oscuro) para que
+     bg-wine-100/text-wine-900/etc. funcionen igual que bg-amber-100. */
+  --color-wine-50: #fbf1f2;
+  --color-wine-100: #f5dee1;
+  --color-wine-200: #e9bcc2;
+  --color-wine-300: #d8919b;
+  --color-wine-400: #bc6470;
+  --color-wine-500: #96424c;
+  --color-wine-600: #722f37;
+  --color-wine-700: #5c2530;
+  --color-wine-800: #481c26;
+  --color-wine-900: #34141b;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f9fafb;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100svh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

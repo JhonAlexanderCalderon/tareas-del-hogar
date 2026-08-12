@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /homes/{homeId} {
+      // Members can always read their home. A home with open capacity is
+      // also readable to any authenticated user — this is what lets the
+      // join-by-invite-code query find it before you're a member (same
+      // trade-off as the "open couple" pattern in the sibling gastos-pwa
+      // project). It stops being readable this way once member count
+      // reaches maxMembers.
+      allow read: if request.auth != null && (
+        request.auth.uid in resource.data.members ||
+        resource.data.members.size() < resource.data.maxMembers
+      );
+
+      // Create: authenticated user creates the home with themselves as
+      // the sole member, as gestor.
+      allow create: if request.auth != null &&
+        request.resource.data.members.size() == 1 &&
+        request.auth.uid in request.resource.data.members &&
+        request.resource.data.members[request.auth.uid].role == 'gestor';
+
+      // Update: a gestor can change anything (add/remove members, change
+      // roles, rename the home). A non-member may make exactly one kind
+      // of update — adding themselves as a new 'miembro' entry (joining)
+      // — and nothing else may change in the same write.
+      allow update: if request.auth != null && (
+        isGestor(homeId) ||
+        (
+          !(request.auth.uid in resource.data.members) &&
+          resource.data.members.size() < resource.data.maxMembers &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+          request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]) &&
+          request.resource.data.members[request.auth.uid].role == 'miembro'
+        )
+      );
+
+      // Tasks (recurring templates): any member reads; only gestor writes.
+      match /tasks/{taskId} {
+        allow read: if request.auth != null && isMember(homeId);
+        allow create, update, delete: if request.auth != null && isGestor(homeId);
+      }
+
+      // Completions: any member reads. Create requires completing your own
+      // assigned task, or being a gestor completing on someone's behalf.
+      // No update (immutable) — "undo" is a delete, only by whoever
+      // completed it or a gestor.
+      match /completions/{completionId} {
+        allow read: if request.auth != null && isMember(homeId);
+
+        allow create: if request.auth != null && isMember(homeId) &&
+          request.resource.data.taskId + '_' + request.resource.data.date == completionId &&
+          request.resource.data.completedBy == request.auth.uid &&
+          (request.resource.data.assigneeId == request.auth.uid || isGestor(homeId));
+
+        allow update: if false;
+
+        allow delete: if request.auth != null && isMember(homeId) &&
+          (resource.data.completedBy == request.auth.uid || isGestor(homeId));
+      }
+    }
+
+    function isMember(homeId) {
+      let home = get(/databases/$(database)/documents/homes/$(homeId));
+      return request.auth.uid in home.data.members;
+    }
+
+    function isGestor(homeId) {
+      let home = get(/databases/$(database)/documents/homes/$(homeId));
+      return request.auth.uid in home.data.members &&
+             home.data.members[request.auth.uid].role == 'gestor';
+    }
+  }
+}
