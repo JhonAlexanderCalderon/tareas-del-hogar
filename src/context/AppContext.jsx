@@ -3,7 +3,7 @@ import {
   GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged,
 } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { saveUser, watchUser, watchHome, watchTasks, watchCompletionsSince } from '../firebase/firestore'
+import { saveUser, getUser, watchUser, watchHome, watchTasks, watchCompletionsSince } from '../firebase/firestore'
 import { todayISO, addDays, OVERDUE_LOOKBACK_DAYS } from '../utils/recurrence'
 
 const Ctx = createContext(null)
@@ -54,7 +54,11 @@ export function AppProvider({ children }) {
     const provider = new GoogleAuthProvider()
     const result = await signInWithPopup(auth, provider)
     const { uid, displayName, email, photoURL } = result.user
-    await saveUser({ uid, name: displayName ?? '', email, photoUrl: photoURL ?? '', homeId: null })
+    const existing = await getUser(uid)
+    await saveUser({
+      uid, name: displayName ?? '', email, photoUrl: photoURL ?? '',
+      ...(existing ? {} : { homeId: null }),
+    })
   }
 
   async function signOut() {
