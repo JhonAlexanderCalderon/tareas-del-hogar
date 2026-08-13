@@ -29,8 +29,8 @@ export function HomeSetupPage() {
         homeName: homeName.trim(),
       })
       setCreatedHome(h)
-    } catch {
-      setError('No se pudo crear el hogar. Intenta de nuevo.')
+    } catch (err) {
+      setError(`No se pudo crear el hogar (${err.code ?? err.message ?? 'error desconocido'}). Intenta de nuevo.`)
     } finally {
       setLoading(false)
     }
@@ -48,8 +48,12 @@ export function HomeSetupPage() {
         setError('Código no válido. Verifica con quien te invitó.')
       } else if (err.message === 'HOME_FULL') {
         setError('Ese hogar ya alcanzó el máximo de integrantes.')
-      } else {
+      } else if (err.code === 'permission-denied') {
+        setError('No tienes permiso para unirte a este hogar. Puede que ya no esté disponible.')
+      } else if (err.code === 'unavailable' || err.code === 'network-request-failed') {
         setError('No se pudo conectar. Verifica tu internet e intenta de nuevo.')
+      } else {
+        setError(`No se pudo unir al hogar (${err.code ?? err.message ?? 'error desconocido'}). Intenta de nuevo.`)
       }
     } finally {
       setLoading(false)

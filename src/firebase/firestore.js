@@ -72,12 +72,16 @@ export async function joinHome({ inviteCode, uid, name, photoUrl }) {
         return
       }
 
-      await updateDoc(docSnap.ref, {
-        [`members.${uid}`]: { name, photoUrl: photoUrl ?? '', role: 'miembro', joinedAt: serverTimestamp() },
-      })
-      await setDoc(doc(db, 'users', uid), { homeId: docSnap.id }, { merge: true })
-      const updated = await getDoc(docSnap.ref)
-      resolve({ id: updated.id, ...updated.data() })
+      try {
+        await updateDoc(docSnap.ref, {
+          [`members.${uid}`]: { name, photoUrl: photoUrl ?? '', role: 'miembro', joinedAt: serverTimestamp() },
+        })
+        await setDoc(doc(db, 'users', uid), { homeId: docSnap.id }, { merge: true })
+        const updated = await getDoc(docSnap.ref)
+        resolve({ id: updated.id, ...updated.data() })
+      } catch (err) {
+        reject(err)
+      }
     }, reject)
   })
 }

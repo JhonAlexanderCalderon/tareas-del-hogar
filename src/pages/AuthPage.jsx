@@ -14,8 +14,8 @@ export function AuthPage() {
     setError('')
     try {
       await signInWithGoogle()
-    } catch {
-      setError('No se pudo iniciar sesión. Intenta de nuevo.')
+    } catch (err) {
+      setError(`No se pudo iniciar sesión (${err.code ?? err.message ?? 'error desconocido'}). Intenta de nuevo.`)
     } finally {
       setLoading(false)
     }
