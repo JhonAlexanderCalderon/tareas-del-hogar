@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { House } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { Button } from '../components/ui/Button'
 import { Spinner } from '../components/ui/Spinner'
@@ -24,9 +23,7 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-white">
       <div className="mb-10 text-center">
-        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-wine-600 flex items-center justify-center">
-          <House size={30} color="#ffffff" strokeWidth={2.2} />
-        </div>
+        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="w-16 h-16 mx-auto mb-5 rounded-2xl" />
         <h1 className="text-3xl font-bold mb-2">Tareas del Hogar</h1>
         <p className="text-gray-400 text-sm max-w-xs">
           Organiza y reparte las tareas de la casa en familia

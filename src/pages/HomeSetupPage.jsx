@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Link2, House as HouseIcon } from 'lucide-react'
+import { Link2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { createHome, joinHome } from '../firebase/firestore'
 import { Button } from '../components/ui/Button'
@@ -87,9 +87,7 @@ export function HomeSetupPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-wine-100 flex items-center justify-center">
-            <HouseIcon size={24} color="#722F37" />
-          </div>
+          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="w-14 h-14 mx-auto mb-4 rounded-2xl" />
           <h1 className="text-2xl font-bold text-gray-900">Tu hogar</h1>
         </div>
 
