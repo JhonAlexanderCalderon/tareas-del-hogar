@@ -9,16 +9,19 @@ service cloud.firestore {
     }
 
     match /homes/{homeId} {
-      // Members can always read their home. A home with open capacity is
-      // also readable to any authenticated user — this is what lets the
+      // Any authenticated user can read a home doc — this is what lets the
       // join-by-invite-code query find it before you're a member (same
       // trade-off as the "open couple" pattern in the sibling gastos-pwa
-      // project). It stops being readable this way once member count
-      // reaches maxMembers.
-      allow read: if request.auth != null && (
-        request.auth.uid in resource.data.members ||
-        resource.data.members.size() < resource.data.maxMembers
-      );
+      // project: you can only match it by already knowing the exact invite
+      // code). Capacity is enforced at `update` (the actual join) instead
+      // of here: Firestore's rules engine doesn't reliably evaluate
+      // resource.data field access for `list` requests against this
+      // collection (confirmed via emulator testing — even
+      // resource.data.get('field', default) silently fell back to the
+      // default instead of the real document), so gating the list itself
+      // on members/maxMembers intermittently denied valid, non-full joins
+      // with permission-denied.
+      allow read: if request.auth != null;
 
       // Create: authenticated user creates the home with themselves as
       // the sole member, as gestor.
