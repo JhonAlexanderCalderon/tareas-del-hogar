@@ -74,8 +74,12 @@ export function isDueOn(task, dateISO) {
   }
 }
 
+// personUid === null (estrictamente, no undefined) significa "todas las
+// personas" — se usa comparación estricta para que un appUser?.uid
+// transitoriamente undefined durante la carga siga filtrando a nada, en
+// vez de filtrar a "todos" por accidente.
 export function todaysTasksFor(tasks, personUid, dateISO = todayISO()) {
-  return tasks.filter((t) => t.assigneeId === personUid && isDueOn(t, dateISO))
+  return tasks.filter((t) => (personUid === null || t.assigneeId === personUid) && isDueOn(t, dateISO))
 }
 
 export const OVERDUE_LOOKBACK_DAYS = 30
@@ -86,7 +90,7 @@ export const OVERDUE_LOOKBACK_DAYS = 30
 export function overdueTasksFor(tasks, personUid, completedKeys, options = {}) {
   const { today = todayISO(), lookbackDays = OVERDUE_LOOKBACK_DAYS } = options
   const lookbackStart = addDays(today, -lookbackDays)
-  const mine = tasks.filter((t) => t.assigneeId === personUid)
+  const mine = tasks.filter((t) => personUid === null || t.assigneeId === personUid)
   const result = []
 
   for (const task of mine) {
@@ -105,4 +109,80 @@ export function overdueTasksFor(tasks, personUid, completedKeys, options = {}) {
   }
 
   return result.sort((a, b) => (a.date < b.date ? -1 : 1))
+}
+
+export function overdueLabel(date) {
+  const diff = daysBetween(date, todayISO())
+  if (diff === 1) return 'Ayer'
+  return `Hace ${diff} días`
+}
+
+export function completedKeysFrom(completions) {
+  return new Set(completions.map((c) => `${c.taskId}_${c.date}`))
+}
+
+function formatDateEs(iso) {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
+// Días lunes -> domingo, para leer siempre en orden natural sin importar
+// el orden en que se guardaron (daysOfWeek se guarda ascendente 0-6, que
+// arranca en domingo si está seleccionado).
+const WEEKDAY_LABELS = { 0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' }
+const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+export function recurrenceText(recurrence) {
+  const r = recurrence ?? {}
+  switch (r.type) {
+    case 'weekly': {
+      const days = WEEKDAY_DISPLAY_ORDER.filter((d) => r.daysOfWeek?.includes(d)).map((d) => WEEKDAY_LABELS[d])
+      return days.length ? days.join(', ') : 'Sin días seleccionados'
+    }
+    case 'interval':
+      return `Cada ${r.intervalDays} día${r.intervalDays === 1 ? '' : 's'} desde ${formatDateEs(r.anchorDate)}`
+    case 'monthly':
+      return `Día ${r.dayOfMonth} de cada mes`
+    case 'once':
+      return `Una vez el ${formatDateEs(r.date)}`
+    default:
+      return ''
+  }
+}
+
+// Igual que overdueTasksFor pero cuenta TODAS las ocurrencias vencidas (no
+// solo las incumplidas) agrupadas por asignado, para calcular % de
+// cumplimiento. Hereda a propósito el mismo comportamiento de
+// overdueTasksFor: pausar una tarea (active: false) le pone en cero todo
+// su historial de la ventana, no solo desde la fecha de pausa, porque
+// isDueOn mira el estado actual de `active`, no el histórico.
+export function complianceStats(tasks, completedKeys, options = {}) {
+  const { today = todayISO(), lookbackDays = OVERDUE_LOOKBACK_DAYS } = options
+  const lookbackStart = addDays(today, -lookbackDays)
+  const byAssignee = new Map()
+
+  for (const task of tasks) {
+    const activatedDate = toDateSafe(task.activatedAt)
+    const floor = activatedDate ? todayISO(activatedDate) : null
+
+    let cursor = addDays(today, -1) // hoy nunca cuenta, igual que overdueTasksFor
+    while (cursor >= lookbackStart) {
+      if (floor && cursor < floor) break
+      if (isDueOn(task, cursor)) {
+        const entry = byAssignee.get(task.assigneeId) ?? { due: 0, completed: 0 }
+        entry.due += 1
+        if (completedKeys.has(`${task.id}_${cursor}`)) entry.completed += 1
+        byAssignee.set(task.assigneeId, entry)
+      }
+      cursor = addDays(cursor, -1)
+    }
+  }
+
+  return Array.from(byAssignee, ([assigneeId, { due, completed }]) => ({
+    assigneeId,
+    dueCount: due,
+    completedCount: completed,
+    pct: due > 0 ? Math.round((completed / due) * 100) : 0,
+  }))
 }

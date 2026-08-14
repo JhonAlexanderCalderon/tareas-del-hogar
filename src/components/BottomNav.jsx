@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { House, ListChecks, Settings } from 'lucide-react'
+import { House, ListChecks, ClipboardList, Settings } from 'lucide-react'
 
 const items = [
-  { path: '/home',     icon: House,      label: 'Inicio'    },
-  { path: '/history',  icon: ListChecks, label: 'Historial' },
-  { path: '/settings', icon: Settings,   label: 'Ajustes'   },
+  { path: '/home',     icon: House,         label: 'Inicio'    },
+  { path: '/history',  icon: ListChecks,    label: 'Historial' },
+  { path: '/tasks',    icon: ClipboardList, label: 'Tareas'    },
+  { path: '/settings', icon: Settings,      label: 'Ajustes'   },
 ]
 
 export function BottomNav() {

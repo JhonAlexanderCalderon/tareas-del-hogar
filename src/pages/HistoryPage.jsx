@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Inbox, CheckCircle2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Inbox, Eye } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { watchRecentCompletions } from '../firebase/firestore'
 import { BottomNav } from '../components/BottomNav'
 import { Card } from '../components/ui/Card'
+import { Avatar } from '../components/ui/Avatar'
 
 const HISTORY_LIMIT = 100
 
 export function HistoryPage() {
   const { home, appUser } = useApp()
+  const navigate = useNavigate()
   const [completions, setCompletions] = useState([])
 
   useEffect(() => {
@@ -26,9 +29,18 @@ export function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white border-b border-gray-100 px-5 pt-12 pb-5">
-        <h2 className="text-lg font-semibold text-gray-900">Historial</h2>
-        <p className="text-gray-400 text-sm mt-1">Tareas completadas por la familia</p>
+      <div className="bg-white border-b border-gray-100 px-5 pt-12 pb-5 flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Historial</h2>
+          <p className="text-gray-400 text-sm mt-1">Tareas completadas por la familia</p>
+        </div>
+        <button
+          onClick={() => navigate('/overview')}
+          className="mt-1 flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 text-gray-600 shrink-0"
+          aria-label="Vista general"
+        >
+          <Eye size={18} />
+        </button>
       </div>
 
       <div className="px-4 py-4">
@@ -45,7 +57,7 @@ export function HistoryPage() {
                       key={c.id}
                       className={`flex items-center gap-3 px-4 py-3 ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
                     >
-                      <CheckCircle2 size={22} className="text-wine-600 shrink-0" strokeWidth={2} />
+                      <Avatar src={home?.members?.[c.completedBy]?.photoUrl} name={c.completedByName} size={36} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{c.taskTitle}</p>
                         <p className="text-xs text-gray-400">

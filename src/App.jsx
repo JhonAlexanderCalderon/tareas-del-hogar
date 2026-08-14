@@ -7,6 +7,9 @@ import { HomeSetupPage } from './pages/HomeSetupPage'
 import { HomePage } from './pages/HomePage'
 import { AddTaskPage } from './pages/AddTaskPage'
 import { HistoryPage } from './pages/HistoryPage'
+import { TeamTasksPage } from './pages/TeamTasksPage'
+import { OverviewPage } from './pages/OverviewPage'
+import { StatsPage } from './pages/StatsPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 function AppRoutes() {
@@ -30,6 +33,9 @@ function AppRoutes() {
       <Route path="/add-task"          element={<AddTaskPage />} />
       <Route path="/add-task/:taskId"  element={<AddTaskPage />} />
       <Route path="/history"           element={<HistoryPage />} />
+      <Route path="/tasks"             element={<TeamTasksPage />} />
+      <Route path="/overview"          element={<OverviewPage />} />
+      <Route path="/stats"             element={<StatsPage />} />
       <Route path="/settings"          element={<SettingsPage />} />
       <Route path="*"                  element={<Navigate to="/home" replace />} />
     </Routes>
