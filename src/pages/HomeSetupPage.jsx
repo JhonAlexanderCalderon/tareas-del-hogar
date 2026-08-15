@@ -10,7 +10,7 @@ import { Card } from '../components/ui/Card'
 export function HomeSetupPage() {
   const { appUser } = useApp()
   const navigate = useNavigate()
-  const [tab, setTab] = useState('create')
+  const [tab, setTab] = useState('join')
   const [homeName, setHomeName] = useState('')
   const [code, setCode] = useState('')
   const [createdHome, setCreatedHome] = useState(null)

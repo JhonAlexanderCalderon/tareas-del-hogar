@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Copy, Plus, ShieldCheck, Shield } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { saveUser, updateMemberRole } from '../firebase/firestore'
+import { saveUser, updateMemberRole, leaveHome } from '../firebase/firestore'
 import { BottomNav } from '../components/BottomNav'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -16,9 +16,15 @@ export function SettingsPage() {
   const [name, setName] = useState(appUser?.name ?? '')
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [leaveError, setLeaveError] = useState('')
+  const [leavingLoading, setLeavingLoading] = useState(false)
 
   const isGestor = home?.members?.[appUser?.uid]?.role === 'gestor'
   const members = Object.entries(home?.members ?? {})
+  const otherGestors = members.filter(([uid, m]) => uid !== appUser?.uid && m.role === 'gestor').length
+  const soleGestorBlocked = isGestor && members.length > 1 && otherGestors === 0
 
   async function handleSaveName() {
     if (!name.trim()) return
@@ -41,6 +47,17 @@ export function SettingsPage() {
 
   async function toggleRole(uid, currentRole) {
     await updateMemberRole(home.id, uid, currentRole === 'gestor' ? 'miembro' : 'gestor')
+  }
+
+  async function handleLeave() {
+    setLeavingLoading(true)
+    setLeaveError('')
+    try {
+      await leaveHome(home.id, appUser.uid)
+    } catch (err) {
+      setLeavingLoading(false)
+      setLeaveError(`No se pudo salir del hogar (${err.code ?? err.message ?? 'error desconocido'}). Intenta de nuevo.`)
+    }
   }
 
   return (
@@ -170,6 +187,50 @@ export function SettingsPage() {
             </div>
           ) : (
             <p className="text-xs text-gray-400 mt-2">Todavía no hay tareas creadas.</p>
+          )}
+        </Card>
+
+        {/* Leave home */}
+        <Card className="p-5">
+          <p className="text-xs text-gray-400 mb-3">Salir del hogar</p>
+          {soleGestorBlocked ? (
+            <p className="text-xs text-gray-500">
+              Sos el único gestor. Asigná a otro integrante como gestor (arriba) antes de poder salir.
+            </p>
+          ) : !leaving ? (
+            <Button onClick={() => setLeaving(true)} variant="danger" className="w-full">
+              Salir del hogar
+            </Button>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-red-600">
+                Vas a salir de "{home?.name}". Vas a perder acceso a las tareas y al historial de este hogar —
+                para volver vas a necesitar el código de invitación de nuevo.
+              </p>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={`Escribí "${home?.name}" para confirmar`}
+              />
+              {leaveError && <p className="text-xs text-red-500">{leaveError}</p>}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleLeave}
+                  disabled={confirmText.trim() !== home?.name || leavingLoading}
+                  variant="danger"
+                  className="flex-1"
+                >
+                  {leavingLoading ? '...' : 'Confirmar salida'}
+                </Button>
+                <Button
+                  onClick={() => { setLeaving(false); setConfirmText(''); setLeaveError('') }}
+                  variant="ghost"
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
           )}
         </Card>
 

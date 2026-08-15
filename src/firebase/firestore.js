@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, setDoc, updateDoc,
   query, where, orderBy, limit, onSnapshot,
-  deleteDoc, serverTimestamp,
+  deleteDoc, deleteField, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from './config'
 
@@ -98,6 +98,11 @@ export function updateHome(homeId, fields) {
 
 export function updateMemberRole(homeId, uid, role) {
   return updateDoc(doc(db, 'homes', homeId), { [`members.${uid}.role`]: role })
+}
+
+export async function leaveHome(homeId, uid) {
+  await updateDoc(doc(db, 'homes', homeId), { [`members.${uid}`]: deleteField() })
+  await setDoc(doc(db, 'users', uid), { homeId: null }, { merge: true })
 }
 
 // ─── TASKS (plantillas recurrentes) ───────────────────────
